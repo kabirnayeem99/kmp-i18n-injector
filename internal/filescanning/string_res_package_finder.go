@@ -8,27 +8,31 @@ import (
 	"strings"
 )
 
-func FindStringResGeneratedPackageName(rootDir string) (string, error) {
+func FindStringResGeneratedPackageName(relativePath string) (string, error) {
 
 	var foundPackage string
-	err := filepath.Walk(rootDir, func(path string, info os.FileInfo, err error) error {
+
+	re := regexp.MustCompile(`^String0\..+\.kt$`)
+
+	err := filepath.Walk(relativePath, func(path string, info os.FileInfo, err error) error {
+
 		if err != nil {
 			return err
 		}
 
-		if info.IsDir() && !strings.Contains(path, "build") {
-			return nil
+		if info.IsDir() && (strings.Contains(path, "iosApp") || strings.Contains(path, "iosMain") || strings.Contains(path, ".git") || strings.Contains(path, ".kotlin") || strings.Contains(path, ".gradle")) {
+			return filepath.SkipDir
 		}
 
-		if strings.HasSuffix(info.Name(), "String0.something.kt") {
+		if !info.IsDir() && re.MatchString(info.Name()) {
 
 			fileContent, err := os.ReadFile(path)
 			if err != nil {
 				return fmt.Errorf("failed to read file %s: %v", path, err)
 			}
 
-			re := regexp.MustCompile(`(?m)^package\s+([a-zA-Z0-9._]+)`)
-			matches := re.FindStringSubmatch(string(fileContent))
+			packageRe := regexp.MustCompile(`(?m)^package\s+([a-zA-Z0-9._]+)`)
+			matches := packageRe.FindStringSubmatch(string(fileContent))
 
 			if len(matches) > 1 {
 				foundPackage = matches[1]
@@ -39,7 +43,7 @@ func FindStringResGeneratedPackageName(rootDir string) (string, error) {
 	})
 
 	if foundPackage == "" {
-		return "", fmt.Errorf("no String0.something.kt file with a package found")
+		return "", fmt.Errorf("no String0.<anything>.kt file with a package found in %s", relativePath)
 	}
 
 	return foundPackage, err

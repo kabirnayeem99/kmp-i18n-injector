@@ -13,6 +13,7 @@ const reset = "\033[0m"
 
 func ScanKotlinFilesForMissingImports() (map[string][]string, error) {
 	rootDir, err := filescanning.GetCurrentDir()
+
 	if err != nil {
 		fmt.Printf("⚠️ Error checking project root: %s\n", err)
 		return nil, err
@@ -28,11 +29,18 @@ func ScanKotlinFilesForMissingImports() (map[string][]string, error) {
 
 	missingImportsByFile := make(map[string][]string)
 
+	stringResPackage, err := filescanning.FindStringResGeneratedPackageName(rootDir)
+
+	if err != nil {
+		fmt.Printf("⚠️ Error finding string resource package, because, %s\n", err)
+		return nil, err
+	}
+
 	for _, filePath := range files {
 		if strings.Contains(filepath.ToSlash(filePath), "/build/") {
 			continue
 		}
-		missingImports, err := filescanning.CheckMissingResStringImports(filePath)
+		missingImports, err := filescanning.CheckMissingResStringImports(filePath, stringResPackage)
 		if err != nil {
 			fmt.Printf("⚠️ %s\n", err)
 			continue

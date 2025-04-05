@@ -3,12 +3,12 @@ package filescanning
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 )
 
-func CheckMissingResStringImports(filePath string) ([]string, error) {
+func CheckMissingResStringImports(filePath, stringResPackage string) ([]string, error) {
+
 	fileContent, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("❌ failed to read file %s: %v", filePath, err)
@@ -23,39 +23,36 @@ func CheckMissingResStringImports(filePath string) ([]string, error) {
 		resourceKeys[key] = false
 	}
 
-	currentDir, _ := GetCurrentDir()
-	relativePath, err := filepath.Rel(currentDir, filePath)
-	if err != nil {
-		relativePath = filePath
-	}
-
-	stringResPackage, err := FindStringResGeneratedPackageName(relativePath)
-
-	if err != nil {
-		return nil, err
-	}
-
 	var missingImports []string
 
-	for key := range resourceKeys {
-		importRegex := fmt.Sprintf(`import %s.%s`, relativePath, key)
+	for key, isImported := range resourceKeys {
+		if isImported {
+			continue
+		}
 
-		importFound := false
-		reImport := regexp.MustCompile(importRegex)
+		importPattern := fmt.Sprintf(`import\s+[a-zA-Z0-9._]+(?:\s+[a-zA-Z0-9._]+)*\.%s\.%s\s*`,
+			regexp.QuoteMeta(stringResPackage), regexp.QuoteMeta(key))
+		reImport := regexp.MustCompile(importPattern)
+
 		if reImport.MatchString(string(fileContent)) {
-			importFound = true
+			resourceKeys[key] = true
+			continue
 		}
 
-		if !importFound {
-			missingImports = append(missingImports, fmt.Sprintf("import %s.%s", stringResPackage, key))
-		} else {
+		if strings.Contains(string(fileContent), fmt.Sprintf("import %s.%s", stringResPackage, key)) {
 			resourceKeys[key] = true
+			continue
 		}
+
+		missingImports = append(missingImports, fmt.Sprintf("import %s.%s", stringResPackage, key))
 	}
 
 	if len(missingImports) > 0 {
 		return missingImports, nil
 	}
+
+	// todo: add key to the xml file
+	// todo: and add the import %s.%s to the top of the file after package
 
 	return nil, nil
 }
