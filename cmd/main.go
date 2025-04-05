@@ -1,14 +1,14 @@
 package main
 
 import (
-	"github.com/kabirnayeem99/kmp-i18n-injector/internal/kmp_validation"
-	"github.com/kabirnayeem99/kmp-i18n-injector/internal/string_finding"
+	"github.com/kabirnayeem99/kmp-i18n-injector/internal/kmpvalidation"
+	"github.com/kabirnayeem99/kmp-i18n-injector/internal/stringfinding"
 )
 
 func main() {
-	isValidKmpProject := kmp_validation.IsValidateKmpProject()
+	isValidKmpProject := kmpvalidation.IsValidateKmpProject()
 	if !isValidKmpProject {
 		return
 	}
-	string_finding.FindStringResources()
+	stringfinding.ScanKotlinFilesForMissingImports()
 }

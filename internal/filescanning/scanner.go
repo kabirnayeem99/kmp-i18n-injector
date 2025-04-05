@@ -1,9 +1,11 @@
-package file_scanning
+package filescanning
 
 import (
 	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func IsKMPProjectRoot(path string) (bool, error) {
@@ -50,18 +52,25 @@ func GetCurrentDir() (string, error) {
 func FindKotlinFiles(rootDir string) ([]string, error) {
 	var files []string
 
-	err := filepath.Walk(rootDir, func(path string, info os.FileInfo, err error) error {
+	err := filepath.WalkDir(rootDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
-		if !info.IsDir() && filepath.Ext(info.Name()) == ".kt" {
+
+		if d.IsDir() && (d.Name() == "build" || d.Name() == "generated") {
+			return fs.SkipDir
+		}
+
+		if !d.IsDir() && strings.EqualFold(filepath.Ext(d.Name()), ".kt") {
 			files = append(files, path)
 		}
+
 		return nil
 	})
 
 	if err != nil {
 		return nil, err
 	}
+
 	return files, nil
 }

@@ -1,11 +1,11 @@
-package kmp_validation
+package kmpvalidation
 
 import (
 	"fmt"
 	"log"
 	"os"
 
-	"github.com/kabirnayeem99/kmp-i18n-injector/internal/file_scanning"
+	"github.com/kabirnayeem99/kmp-i18n-injector/internal/filescanning"
 )
 
 func IsValidateKmpProject() bool {
@@ -17,7 +17,7 @@ func IsValidateKmpProject() bool {
 		return false
 	}
 
-	isRoot, err := file_scanning.IsKMPProjectRoot(wd)
+	isRoot, err := filescanning.IsKMPProjectRoot(wd)
 	if err != nil {
 		log.Fatalf("⚠️ Error checking project root: %s\n", err)
 		return false
